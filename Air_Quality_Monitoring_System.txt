@@ -1,0 +1,55 @@
+#define BLYNK_PRINT Serial
+#include <Blynk.h>
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+
+#define BLYNK_TEMPLATE_ID "TMPLJKmM0rwH"
+#define BLYNK_TEMPLATE_NAME "Quickstart Template"
+#define BLYNK_AUTH_TOKEN "s_odJwHTmekZgUYJOeXxMijWjWBGYIgs"
+
+char auth[] = "s_odJwHTmekZgUYJOeXxMijWjWBGYIgs";             // You should get Auth Token in the Blynk App.
+char ssid[] = "abc";                                     // Your WiFi credentials.
+char pass[] = "123456789";
+
+int buzzer = D2;
+int smokeA0 = A0;
+float RS_gas = 0;
+float ratio = 0;
+float sensorValue = 0;
+float sensor_volt = 0;
+float R0 = 7200.0;
+
+// Your threshold value. You might need to change it.
+int sensorThres = 600;
+
+void setup() {
+  pinMode(buzzer, OUTPUT);
+  pinMode(smokeA0, INPUT);
+  Serial.begin(9600);
+  Blynk.begin(auth, ssid, pass);
+}
+
+void loop() {
+  Blynk.run();
+
+  int analogSensor = analogRead(smokeA0);
+   sensorValue = analogRead(A0);
+   sensor_volt = sensorValue/1024*5.0;
+   RS_gas = (5.0-sensor_volt)/sensor_volt;
+   ratio = RS_gas/R0; //Replace R0 with the value found using the sketch above
+   float x = 1538.46 * ratio;
+   float ppm = pow(x,-1.709);
+   Serial.print("PPM: ");
+   Serial.println(ppm);
+   Serial.print("Pin A0: ");
+   Serial.println(analogSensor);
+   Blynk.virtualWrite(V5, ppm);
+   Blynk.virtualWrite(V6, analogSensor);
+  // Checks if it has reached the threshold value
+  if (analogSensor > sensorThres) {
+    tone(buzzer, 100, 200);
+  } else {
+    noTone(buzzer);
+  }
+  delay(1000);
+}
